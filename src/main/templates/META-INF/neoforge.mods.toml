@@ -1,0 +1,27 @@
+modLoader = "javafml"
+loaderVersion = "${loader_version_range}"
+license = "${mod_license}"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${mod_version}"
+displayName = "${mod_name}"
+authors = "Chill"
+description = '''Mobs with some common sense. Pets, golems and anything on a lead keep clear of lava and cliffs, keep up with you, walk up hills instead of being yanked, come down the safe way, and get dragged instead of snapping the lead in boats or on ice. Pets get rescued from drowning, lava and deadly falls. Villagers remember their beds, find their way home when lost, follow emerald blocks, and stay put when you move them. Golems and guards walk back to their village. Herd instinct: hurt one cow and the rest of the herd runs; hit a spider and its friends come for you (idea from Darkhax's Herd Mentality, written independently).'''
+
+[[mixins]]
+config = "commonsense.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"

@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.chill.commonsense.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["EntityMixin", "LivingEntityMixin", "MobMixin", "TamableAnimalMixin", "SleepingRenderMixin", "LivingEntityDamageAccessor", "MobGoalsAccessor", "TemptGoalMixin", "FollowTemptationMixin", "SensorMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

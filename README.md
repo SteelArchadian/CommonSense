@@ -48,4 +48,4 @@ The jar is written to `build/libs/`.
 
 The herd instinct idea comes from [Herd Mentality](https://www.curseforge.com/minecraft/mc-mods/herd-mentality) by Darkhax. Common Sense's version is written independently; no Herd Mentality code is used.
 
-Licensed under the GNU Lesser General Public License v3.0 only: see [LICENSE](LICENSE) (with the GPL text it builds on in [COPYING](COPYING)). Made for the Foundation modpack, with help from Claude.
+Licensed under the GNU Lesser General Public License v3.0 only: see [LICENSE](LICENSE) (with the GPL text it builds on in [COPYING](COPYING)). Made for the Foundation modpack, with AI assistance.

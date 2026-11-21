@@ -40,6 +40,12 @@ public class CommonSense {
         ATTACHMENTS.register(modBus);
         NeoForge.EVENT_BUS.register(CompanionEvents.class);
         NeoForge.EVENT_BUS.register(HerdInstinct.class);
+        NeoForge.EVENT_BUS.register(HerdBehaviour.class);
+        NeoForge.EVENT_BUS.register(Hide.class);
+        NeoForge.EVENT_BUS.register(Manners.class);
+        NeoForge.EVENT_BUS.register(HostileWits.class);
+        NeoForge.EVENT_BUS.register(DebugCommands.class);
+        NeoForge.EVENT_BUS.register(PortalFollow.class);
         if (Boolean.getBoolean("commonsense.devtests")) {
             NeoForge.EVENT_BUS.register(DevScenarios.class);
         }

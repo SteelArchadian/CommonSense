@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * The tempting sensor normally only scans once per second, so brain based animals keep following for up to a second
- * after the item is put away, and react late when it is taken out. Scan every tick instead.
+ * after the item is put away, and react late when it is taken out. Scan every 4 ticks instead (a 0.2 s delay nobody notices,
+ * at a quarter of the cost of scanning every tick on big farms).
  */
 @Mixin(Sensor.class)
 public class SensorMixin {
@@ -22,7 +23,7 @@ public class SensorMixin {
     @Inject(method = "tick", at = @At("HEAD"))
     private void commonsense$scanEveryTick(CallbackInfo ci) {
         if ((Object) this instanceof TemptingSensor && Config.on() && Config.RELIABLE_TEMPT.get()) {
-            this.timeToTick = 0L;
+            this.timeToTick = Math.min(this.timeToTick, 4L);
         }
     }
 }

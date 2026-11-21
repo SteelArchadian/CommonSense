@@ -5,6 +5,8 @@ import dev.chill.commonsense.Config;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.TemptGoal;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import dev.chill.commonsense.HerdBehaviour;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,6 +14,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -25,6 +28,7 @@ public abstract class TemptGoalMixin {
     @Shadow @Final protected PathfinderMob mob;
     @Shadow protected Player player;
     @Shadow private int calmDown;
+    @Shadow @Final private TargetingConditions targetingConditions;
 
     @Shadow protected abstract boolean canScare();
     @Shadow private boolean shouldFollow(LivingEntity entity) { throw new AssertionError(); }
@@ -34,6 +38,27 @@ public abstract class TemptGoalMixin {
     @Unique
     private boolean commonsense$isTempting(Player player) {
         return player != null && player.isAlive() && !player.isSpectator() && this.shouldFollow(player);
+    }
+
+    // Tempt range bonus; applied each check so config changes take effect at once.
+    @Inject(method = "canUse", at = @At("HEAD"))
+    private void commonsense$range(CallbackInfoReturnable<Boolean> cir) {
+        this.targetingConditions.range(10.0 + (Config.on() ? Config.TEMPT_RANGE_BONUS.get() : 0));
+    }
+
+    // A wary animal ignores food from the player who scared it unless they sneak.
+    @Inject(method = "canUse", at = @At("RETURN"), cancellable = true)
+    private void commonsense$wary(CallbackInfoReturnable<Boolean> cir) {
+        if (cir.getReturnValueZ() && Config.on() && HerdBehaviour.refusesTempt(this.mob, this.player)) {
+            this.player = null;
+            cir.setReturnValue(false);
+        }
+    }
+
+    // ...and comes slowly when they do.
+    @ModifyArg(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/ai/navigation/PathNavigation;moveTo(Lnet/minecraft/world/entity/Entity;D)Z"), index = 1)
+    private double commonsense$warySpeed(double speed) {
+        return Config.on() && HerdBehaviour.isWaryOf(this.mob, this.player) ? speed * 0.6 : speed;
     }
 
     // Drop the goal as soon as the item leaves the player's hands.
@@ -50,6 +75,10 @@ public abstract class TemptGoalMixin {
         if (Config.on() && Config.RELIABLE_TEMPT.get() && !this.commonsense$isTempting(this.player)) {
             this.mob.getNavigation().stop();
             ci.cancel();
+            return;
+        }
+        if (Config.on() && this.player != null) {
+            HerdBehaviour.markTempted(this.mob);   // herd mates nearby may follow this one
         }
     }
 

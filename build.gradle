@@ -46,10 +46,17 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
 
+repositories { mavenLocal() }
+
+dependencies {
+    // Optional: the shared Config Panel settings screen, used when installed.
+    compileOnly 'dev.configpanel:config-panel-1.21.1:1.0.1'
+    runtimeOnly 'dev.configpanel:config-panel-1.21.1:1.0.1'
+}
+
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 
-// Ship the license files inside the jar (LGPL-3.0-only; COPYING is the GPL text the LGPL builds on).
+// Ship the license inside the jar (GPL-3.0-only).
 tasks.named('jar') {
     from(rootProject.file('LICENSE')) { rename { 'LICENSE-CommonSense.txt' } }
-    from(rootProject.file('COPYING')) { rename { 'COPYING-CommonSense.txt' } }
 }

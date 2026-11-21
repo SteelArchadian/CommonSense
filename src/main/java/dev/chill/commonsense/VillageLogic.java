@@ -78,6 +78,7 @@ public final class VillageLogic {
                         mem.lostSinceTick = -1;
                         return;
                     }
+                    mem.lostSinceTick = now;   // nowhere roomy to land: wait another full spell before searching again
                 }
             } else {
                 mem.lostSinceTick = -1;
@@ -145,9 +146,12 @@ public final class VillageLogic {
 
     /** Every few ticks: walk after a lure holder; stop close by, and stop entirely once the lure is put away. */
     public static void tickLure(Villager villager) {
+        Player player = lureHolder(villager);
+        if (player == null && !villager.hasData(CommonSense.VILLAGE)) {
+            return;   // never lured and nothing remembered: don't create (and save) memory for every villager in the world
+        }
         VillageMemory mem = memory(villager);
         Brain<Villager> brain = villager.getBrain();
-        Player player = lureHolder(villager);
         long now = villager.level().getGameTime();
         if (player == null) {
             if (mem.lured) {
@@ -306,8 +310,9 @@ public final class VillageLogic {
             Brain<Villager> brain = villager.getBrain();
             brain.setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(step, 0.6F, 2));
         } else {
-            mob.getNavigation().setMaxVisitedNodesMultiplier(2.0F);
+            mob.getNavigation().setMaxVisitedNodesMultiplier(2.0F);   // only for this long walk home: the path is planned inside moveTo
             mob.getNavigation().moveTo(step.x, step.y, step.z, 0.7);
+            mob.getNavigation().resetMaxVisitedNodesMultiplier();
         }
     }
 

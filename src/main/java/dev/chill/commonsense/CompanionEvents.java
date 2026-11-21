@@ -45,16 +45,46 @@ public final class CompanionEvents {
     }
 
     @SubscribeEvent
+    public static void onPotionImpact(net.neoforged.neoforge.event.entity.ProjectileImpactEvent event) {
+        if (event.getProjectile() instanceof net.minecraft.world.entity.projectile.ThrownPotion potion && !potion.level().isClientSide
+                && potion.getTags().contains(Courtesy.SPLASH_TAG)) {
+            Courtesy.splashLanded(potion, event.getRayTraceResult().getLocation());
+        }
+    }
+
+    @SubscribeEvent
     public static void onMobTick(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof Mob mob) || !Companions.isServer(mob) || !Config.on() || !mob.isAlive()) {
+        if (!(event.getEntity() instanceof Mob mob) || !Companions.isServer(mob) || !mob.isAlive()) {
             return;
         }
         int phase = mob.tickCount + mob.getId();
+        if (!Config.on()) {
+            if (phase % 20 == 0 && mob.hasData(CommonSense.STATE)) {
+                relax(mob, mob.getData(CommonSense.STATE));   // the mod was switched off live: hand back vanilla speed and pathing
+            }
+            return;
+        }
+        if (mob instanceof net.minecraft.world.entity.animal.IronGolem && mob.isOnFire() && Config.GOLEM_FIREPROOF.get()) {
+            mob.clearFire();
+        }
         if (phase % 20 == 0) {
             updateHazardAvoidance(mob);
         }
+        if (Courtesy.profile) {   // dev load test only: how much of the tick the courtesy checks cost
+            long t0 = System.nanoTime();
+            Courtesy.tick(mob, phase);
+            Courtesy.profNanos += System.nanoTime() - t0;
+        } else {
+            Courtesy.tick(mob, phase);
+        }
         if (mob instanceof net.minecraft.world.entity.npc.Villager villager && (phase % 5 == 0 || VillageLogic.inLureCooldown(villager))) {
             VillageLogic.tickLure(villager);
+        }
+        if (phase % 10 == 0 && Config.UNSTICK.get()) {
+            Unstick.tick(mob);
+        }
+        if (mob instanceof net.minecraft.world.entity.npc.Villager hunted) {
+            Hide.tickVillager(hunted, phase % 20 == 0);
         }
         if (phase % 5 == 0) {
             LivingEntity leader = Companions.leader(mob);
@@ -74,17 +104,18 @@ public final class CompanionEvents {
     // ------------------------------------------------------------------ hazard-aware pathing
 
     private static void updateHazardAvoidance(Mob mob) {
-        boolean want = Config.HAZARD_AVOIDANCE.get() && !mob.fireImmune() && Companions.isCompanion(mob);
+        boolean want = Config.HAZARD_AVOIDANCE.get() && !mob.fireImmune() && Courtesy.careful(mob);
         if (!want && !mob.hasData(CommonSense.STATE)) {
             return;
         }
         CompanionState st = Companions.state(mob);
         if (want && !st.malusApplied) {
-            // Wide mobs (iron golems) hang over the block next to their path, so for them "next to lava/fire" is off limits entirely.
+            // Wide mobs (iron golems, horses) hang over the block next to their path, so for them "next to lava/fire/cactus" is off
+            // limits entirely: vanilla only checks the blocks on one side of a wide mob's node, and the other side is where they get burnt.
             boolean wide = mob.getBbWidth() > 1.0F;
             raise(mob, st, PathType.DANGER_FIRE, wide ? -1.0F : 16.0F);
             raise(mob, st, PathType.DAMAGE_FIRE, -1.0F);
-            raise(mob, st, PathType.DANGER_OTHER, wide ? 16.0F : 12.0F);
+            raise(mob, st, PathType.DANGER_OTHER, wide ? -1.0F : 12.0F);
             raise(mob, st, PathType.DAMAGE_OTHER, -1.0F);
             raise(mob, st, PathType.DANGER_POWDER_SNOW, 8.0F);
             raise(mob, st, PathType.POWDER_SNOW, -1.0F);
@@ -92,11 +123,30 @@ public final class CompanionEvents {
             raise(mob, st, PathType.LAVA, -1.0F);
             st.malusApplied = true;
         } else if (!want && st.malusApplied) {
-            for (Map.Entry<PathType, Float> e : st.savedMalus.entrySet()) {
-                mob.setPathfindingMalus(e.getKey(), e.getValue());
-            }
-            st.savedMalus.clear();
-            st.malusApplied = false;
+            restoreMalus(mob, st);
+        }
+    }
+
+    private static void restoreMalus(Mob mob, CompanionState st) {
+        for (Map.Entry<PathType, Float> e : st.savedMalus.entrySet()) {
+            mob.setPathfindingMalus(e.getKey(), e.getValue());
+        }
+        st.savedMalus.clear();
+        st.malusApplied = false;
+    }
+
+    /** Undo everything this mod changed on the mob's movement (speed boost, step height, path costs). */
+    private static void relax(Mob mob, CompanionState st) {
+        if (st.malusApplied) {
+            restoreMalus(mob, st);
+        }
+        if (st.boost != 0) {
+            st.boost = 0;
+            setModifier(mob, Attributes.MOVEMENT_SPEED, SPEED_ID, 0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        }
+        if (st.stepAssist) {
+            st.stepAssist = false;
+            setModifier(mob, Attributes.STEP_HEIGHT, STEP_ID, 0, AttributeModifier.Operation.ADD_VALUE);
         }
     }
 
@@ -147,6 +197,9 @@ public final class CompanionEvents {
                 st.boost = Math.min(Config.MAX_SPEED_BOOST.get() - 1.0, st.boost + 0.15);
             }
             setModifier(mob, Attributes.MOVEMENT_SPEED, SPEED_ID, st.boost, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        } else if (st.boost != 0) {
+            st.boost = 0;   // speed matching switched off live
+            setModifier(mob, Attributes.MOVEMENT_SPEED, SPEED_ID, 0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
         }
         st.lastLeaderDist = dist;
 
@@ -235,6 +288,8 @@ public final class CompanionEvents {
             }
             Companions.teleportSafely(mob, target);
             st.lastRescueTick = now;
+        } else {
+            st.lastRescueTick = now - 20;   // nothing safe yet: look again in a second rather than every half second
         }
     }
 

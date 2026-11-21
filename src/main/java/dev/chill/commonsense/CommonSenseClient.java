@@ -11,6 +11,10 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 public class CommonSenseClient {
 
     public CommonSenseClient(ModContainer container) {
-        container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        if (net.neoforged.fml.ModList.get().isLoaded("configpanel")) {
+            dev.configpanel.ConfigPanel.register(container);   // the shared settings screen (sidebar, search, reset per row)
+        } else {
+            container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        }
     }
 }

@@ -9,6 +9,11 @@ public class Config {
     public static final ModConfigSpec.BooleanValue ENABLED;
 
     public static final ModConfigSpec.BooleanValue HAZARD_AVOIDANCE;
+    public static final ModConfigSpec.BooleanValue GOLEM_FIREPROOF;
+    public static final ModConfigSpec.IntValue SPLASH_RADIUS;
+    public static final ModConfigSpec.BooleanValue FIRE_PATTING;
+    public static final ModConfigSpec.BooleanValue DOOR_TURNS;
+    public static final ModConfigSpec.BooleanValue UNSTICK;
 
     public static final ModConfigSpec.BooleanValue SPEED_MATCHING;
     public static final ModConfigSpec.DoubleValue MAX_SPEED_BOOST;
@@ -24,6 +29,17 @@ public class Config {
     public static final ModConfigSpec.BooleanValue TELEPORT_AVOID_LEDGES;
     public static final ModConfigSpec.BooleanValue WAIT_WHILE_OWNER_UNSAFE;
     public static final ModConfigSpec.BooleanValue PET_RESCUE;
+    public static final ModConfigSpec.BooleanValue NO_FRIENDLY_FIRE;
+    public static final ModConfigSpec.BooleanValue PET_RESTRAINT;
+    public static final ModConfigSpec.BooleanValue PORTAL_FOLLOW;
+    public static final ModConfigSpec.DoubleValue PORTAL_FOLLOW_RANGE;
+    public static final ModConfigSpec.BooleanValue DODGE_CREEPERS;
+    public static final ModConfigSpec.BooleanValue GROUND_TIE;
+    public static final ModConfigSpec.BooleanValue GIVE_UP_UNREACHABLE;
+    public static final ModConfigSpec.BooleanValue NO_PET_SHOVE;
+    public static final ModConfigSpec.BooleanValue NO_TRAMPLING;
+    public static final ModConfigSpec.BooleanValue HOSTILE_WITS;
+    public static final ModConfigSpec.IntValue HOSTILE_LINGER_SECONDS;
 
     public static final ModConfigSpec.BooleanValue VILLAGE_HOMING;
     public static final ModConfigSpec.BooleanValue VILLAGER_TELEPORT_HOME;
@@ -34,11 +50,18 @@ public class Config {
     public static final ModConfigSpec.DoubleValue LURE_FOLLOW_RANGE;
 
     public static final ModConfigSpec.BooleanValue HERD_INSTINCT;
+    public static final ModConfigSpec.BooleanValue HIDE_FROM_ATTACKERS;
     public static final ModConfigSpec.DoubleValue HERD_RANGE;
     public static final ModConfigSpec.DoubleValue HERD_FIGHT_RANGE;
+    public static final ModConfigSpec.IntValue HERD_WARY_SECONDS;
+    public static final ModConfigSpec.DoubleValue HERD_WARY_DISTANCE;
+    public static final ModConfigSpec.DoubleValue HERD_FLEE_DISTANCE;
     public static final ModConfigSpec.BooleanValue HERD_FIGHT_BACK;
 
     public static final ModConfigSpec.BooleanValue RELIABLE_TEMPT;
+    public static final ModConfigSpec.IntValue TEMPT_RANGE_BONUS;
+    public static final ModConfigSpec.BooleanValue HERD_FOLLOW;
+    public static final ModConfigSpec.DoubleValue HERD_FOLLOW_RANGE;
 
     public static final ModConfigSpec.BooleanValue SLEEPING_RENDER_FIX;
 
@@ -46,8 +69,14 @@ public class Config {
         ENABLED = B.comment("Master switch.").define("enabled", true);
 
         B.comment("Companions = tamed/owned mobs, golems, anything on a lead, and the commonsense:companions tag.").push("pathing");
-        HAZARD_AVOIDANCE = B.comment("Companions keep a safe distance from lava, fire, cactus, berry bushes and powder snow when pathing.",
-                "Wide mobs (iron golems...) are not allowed to walk where their body would hang over lava or fire.").define("hazard_avoidance", true);
+        HAZARD_AVOIDANCE = B.comment("Animals, pets, villagers, golems and other non-monsters keep a safe distance from lava, fire, cactus, berry bushes",
+                "and powder snow when pathing, and walk around wither roses and pointed dripstone instead of through them.",
+                "Wide mobs (iron golems, horses...) won't squeeze past hazards their body would brush, and everyone edges away from a hazard",
+                "they've been bumped or turned too close to. Monsters don't know any better.").define("hazard_avoidance", true);
+        GOLEM_FIREPROOF = B.comment("Iron golems can't catch fire (lava still hurts them).").define("golem_fireproof", true);
+        SPLASH_RADIUS = B.comment("Water splashed by villagers on a fire puts out fire blocks and burning mobs this many blocks around where it lands.").defineInRange("splash_radius", 2, 1, 4);
+        FIRE_PATTING = B.comment("Villagers, illagers and other mobs that understand doors pat out small fires near them (not fireplaces on netherrack).").define("fire_patting", true);
+        DOOR_TURNS = B.comment("Mobs meeting at a doorway take turns instead of jamming it and fighting over the door: one waits a step back, the other goes.").define("door_turns", true);
         B.pop();
 
         B.push("following");
@@ -74,6 +103,31 @@ public class Config {
         WAIT_WHILE_OWNER_UNSAFE = B.comment("Pets don't teleport to you while you're swimming, in a water column, falling, gliding or flying; they come once you're on solid ground.").define("wait_while_owner_unsafe", true);
         PET_RESCUE = B.comment("Pets (and leashed mobs) that are drowning, in lava or falling to their death are teleported to safe ground near you,",
                 "or to the last safe spot you stood on.").define("rescue", true);
+        NO_FRIENDLY_FIRE = B.comment("Your swings, sweeps and arrows don't hurt your own pets and mounts, and your pets don't hurt each other.",
+                "Your shots fly on through your pets to what you were aiming at. Sneak while attacking if you really mean it.").define("no_friendly_fire", true);
+        PET_RESTRAINT = B.comment("Your pets don't join in when you hit a villager, golem or someone's pet by accident.",
+                "They still fight anything that attacked you or them.").define("pet_restraint", true);
+        PORTAL_FOLLOW = B.comment("Pets that are following you (not sitting) and mobs on your lead come with you through nether and end portals.").define("portal_follow", true);
+        PORTAL_FOLLOW_RANGE = B.comment("How close (blocks) to you a pet must be when you step through the portal to come along.").defineInRange("portal_follow_range", 12.0, 2.0, 32.0);
+        DODGE_CREEPERS = B.comment("Pets, golems and mobs on a lead step away from a creeper that starts to hiss. Pets told to sit stay put.").define("dodge_creepers", true);
+        GROUND_TIE = B.comment("A saddled mount you climb off stays where you left it instead of wandering off. It still runs from danger and follows food,",
+                "then walks back. Ride it, lead it or take the saddle off to free it.").define("ground_tie", true);
+        GIVE_UP_UNREACHABLE = B.comment("Pets stop chasing a target they have had no way to reach for 5 seconds (across water, behind glass, up a cliff)",
+                "and come back to you instead of standing at the edge.").define("give_up_unreachable", true);
+        NO_PET_SHOVE = B.comment("Your own pets and mounts never push you around (off a ledge, out of a doorway, into lava). They still make room:",
+                "bumping into you nudges them aside instead.").define("no_pet_shove", true);
+        B.pop();
+
+        B.push("hostiles");
+        HOSTILE_WITS = B.comment("Monsters that can't get to you act on what they understand instead of pushing into a wall or wandering off:",
+                "zombies, skeletons and other simple mobs hang around nearby; pillagers and other mobs that know doors wait outside your",
+                "door or watch you through a window. Spiders and other climbers keep their own pathing.").define("hostile_wits", true);
+        HOSTILE_LINGER_SECONDS = B.comment("How long (seconds) a monster keeps hanging about after it loses sight of you.")
+                .defineInRange("hostile_linger_seconds", 30, 0, 300);
+        B.pop();
+
+        B.push("farms");
+        NO_TRAMPLING = B.comment("Animals, pets, villagers and mounts don't trample farmland. Players on foot and monsters still do.").define("no_trampling", true);
         B.pop();
 
         B.comment("Villagers, iron golems and guards (tag commonsense:village_mobs).").push("villages");
@@ -85,10 +139,15 @@ public class Config {
         ESCORT_RADIUS = B.comment("Any player this close to a village mob counts as leading it (so follow mods and escorting are never overridden).").defineInRange("escort_radius", 16.0, 4.0, 64.0);
         VILLAGER_LURE_FOLLOW = B.comment("Villagers follow a player holding an item from the commonsense:villager_lures tag (emerald block by default).",
                 "Sleeping, trading or panicking villagers ignore it.").define("villagers_follow_lures", true);
-        LURE_FOLLOW_RANGE = B.comment("How close (blocks) a villager must be to notice a lure.").defineInRange("lure_follow_range", 10.0, 2.0, 32.0);
+        LURE_FOLLOW_RANGE = B.comment("How close (blocks) a villager must be to notice a lure.").defineInRange("lure_follow_range", 12.0, 2.0, 32.0);
         LURE_RADIUS = B.comment("A player holding an item from the commonsense:villager_lures tag (emerald block by default) this close counts as leading.").defineInRange("lure_radius", 24.0, 4.0, 64.0);
         B.pop();
 
+        B.comment("Running away smartly.").push("hide");
+        HIDE_FROM_ATTACKERS = B.comment("Attacked small mobs (chickens, rabbits, pigs, babies...) duck into a hole, tall foliage or a hollow log the attacker can't follow into, unless the attacker is small too.",
+                "Attacked villagers run for a door and put it between themselves and the enemy.").define("hide_from_attackers", true);
+        UNSTICK = B.comment("A walking mob that has stopped making progress on its path (a carpet, snow layer or odd block at a doorway, a door it can't get past) is nudged on to the next step, or re-paths, instead of standing there for ever.").define("unstick", true);
+        B.pop();
         B.comment("Herd instinct (idea from Darkhax's Herd Mentality): hurting a mob alerts others of its kind nearby.").push("herd");
         HERD_INSTINCT = B.comment("When an animal is hurt, others of the same kind nearby take fright and run. Animals only: monsters are never affected.",
                 "Pets and mobs in commonsense:excluded are never alerted.").define("herd_instinct", true);
@@ -96,11 +155,19 @@ public class Config {
         HERD_FIGHT_BACK = B.comment("Animals that can fight back (llamas, polar bears, wolves...): only the single nearest one turns on the attacker,",
                 "so a whole caravan or pack doesn't. Off: everyone just runs.").define("fight_back", true);
         HERD_FIGHT_RANGE = B.comment("The animal that fights back must be this close (blocks) to the one that was hit.").defineInRange("fight_back_range", 6.0, 1.0, 32.0);
+        HERD_FLEE_DISTANCE = B.comment("How far (blocks) a scared herd bolts, together, away from whoever hurt one of them.").defineInRange("flee_distance", 16.0, 4.0, 48.0);
+        HERD_WARY_SECONDS = B.comment("After the bolt, the herd stays wary of that player for this long: they back away when you come close",
+                "and only follow food if you sneak (and then slowly). 0 = just the bolt.").defineInRange("wary_seconds", 60, 0, 600);
+        HERD_WARY_DISTANCE = B.comment("How close (blocks) a wary animal lets that player come before backing away. Sneaking gets you much closer.").defineInRange("wary_distance", 8.0, 2.0, 24.0);
         B.pop();
 
         B.push("tempt");
         RELIABLE_TEMPT = B.comment("Animals follow the moment you hold their food and stop the moment you put it away, with no 5-second wait before they can be tempted again.",
                 "Cats and ocelots you startle still keep their wait. Replaces the Reliable Tempt and No Animal Tempt Delay mods.").define("reliable_tempt", true);
+        TEMPT_RANGE_BONUS = B.comment("Extra blocks added to the vanilla 10-block range at which animals notice food you hold.").defineInRange("tempt_range_bonus", 2, 0, 16);
+        HERD_FOLLOW = B.comment("Animals near one you are tempting follow it too, so a straggler isn't left behind.",
+                "They only follow animals you tempt directly, never other followers, so a whole field doesn't join in.").define("herd_follow", true);
+        HERD_FOLLOW_RANGE = B.comment("How close (blocks) an animal must be to a tempted herd mate to tag along.").defineInRange("herd_follow_range", 4.0, 1.0, 12.0);
         B.pop();
 
         B.push("visuals");

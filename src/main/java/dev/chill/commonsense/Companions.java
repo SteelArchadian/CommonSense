@@ -146,9 +146,12 @@ public final class Companions {
     /** True if stepping off any side would mean a drop the mob can't survive (or one into lava). Walls are fine. */
     private static boolean onLedge(Mob mob, BlockPos feet) {
         Level level = mob.level();
-        int maxDrop = mob.getMaxFallDistance() + 1;
+        int maxDrop = Math.min(mob.getMaxFallDistance(), 32) + 1;   // capped: a modded mob may claim a huge safe fall
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos side = feet.relative(dir);
+            if (!level.isLoaded(side)) {
+                return true;   // unknown ground counts as unsafe, and asking for it would load the chunk on the main thread
+            }
             if (!level.getBlockState(side).getCollisionShape(level, side).isEmpty()) {
                 continue;
             }

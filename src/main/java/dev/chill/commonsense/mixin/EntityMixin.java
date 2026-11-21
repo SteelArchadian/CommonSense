@@ -4,11 +4,14 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import dev.chill.commonsense.Config;
 import dev.chill.commonsense.LeashLogic;
+import dev.chill.commonsense.Manners;
 import dev.chill.commonsense.CommonSense;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * The single place every leashable entity's lead is ticked, so this covers horses, camels and modded mobs, and it works on top of
@@ -18,6 +21,29 @@ import org.spongepowered.asm.mixin.injection.At;
  */
 @Mixin(Entity.class)
 public abstract class EntityMixin {
+
+    /**
+     * Your own pet or mount bumping into you: only the pet gives way, by the same nudge vanilla would give it. Covers every
+     * pushing path (mob pushing you, you pushing it, client and server) since they all meet here.
+     */
+    @Inject(method = "push(Lnet/minecraft/world/entity/Entity;)V", at = @At("HEAD"), cancellable = true)
+    private void commonsense$noPetShove(Entity other, CallbackInfo ci) {
+        Entity self = (Entity) (Object) this;
+        Entity pet = Manners.petBumpingOwner(self, other);
+        if (pet == null || self.isPassengerOfSameVehicle(other) || self.noPhysics || other.noPhysics) {
+            return;
+        }
+        ci.cancel();
+        Entity owner = pet == self ? other : self;
+        double dx = pet.getX() - owner.getX();
+        double dz = pet.getZ() - owner.getZ();
+        double d = net.minecraft.util.Mth.absMax(dx, dz);
+        if (d >= 0.01F && !pet.isVehicle() && pet.isPushable()) {
+            d = Math.sqrt(d);
+            double scale = Math.min(1.0, 1.0 / d) * 0.05F / d;
+            pet.push(dx * scale, 0.0, dz * scale);
+        }
+    }
 
     @WrapOperation(method = "baseTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Leashable;tickLeash(Lnet/minecraft/world/entity/Entity;)V"))
     private void commonsense$tickLeash(Entity entity, Operation<Void> original) {

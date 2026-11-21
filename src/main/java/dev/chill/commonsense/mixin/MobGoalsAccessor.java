@@ -5,10 +5,13 @@ import net.minecraft.world.entity.ai.goal.GoalSelector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/** Lets the herd instinct tell animals that fight back (they have a revenge goal) from ones that only run. */
+/** Lets the herd code tell animals that fight back (revenge goal) from ones that only run, and add the herd goals. */
 @Mixin(Mob.class)
 public interface MobGoalsAccessor {
 
     @Accessor("targetSelector")
     GoalSelector commonsense$targetSelector();
+
+    @Accessor("goalSelector")
+    GoalSelector commonsense$goalSelector();
 }

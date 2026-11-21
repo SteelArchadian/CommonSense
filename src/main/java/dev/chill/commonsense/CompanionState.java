@@ -29,4 +29,12 @@ public class CompanionState {
     /** The ledge-descent path being protected from replanning, and since when (gives up after a few seconds). */
     public net.minecraft.world.level.pathfinder.Path descentPath;
     public long descentSince;
+
+    /** Herd instinct: who this animal is wary of and until when, and where it bolts to first (with its herd). */
+    public java.util.UUID waryOf;
+    public long waryUntil;
+    public Vec3 fleeTarget;
+    public long fleeUntil;
+    /** Last tick a player was tempting this animal directly; herd mates follow only animals tempted this way. */
+    public long temptedTick = -1000;
 }

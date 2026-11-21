@@ -201,7 +201,10 @@ public final class LeashLogic {
         double reach = mob.getBbWidth() / 2.0 + 0.7;
         Level level = mob.level();
         BlockPos probe = BlockPos.containing(mob.getX() + px / len * reach, mob.getY() + 0.1, mob.getZ() + pz / len * reach);
-        int maxDrop = Math.max(1, mob.getMaxFallDistance());
+        if (!level.isLoaded(probe)) {
+            return true;   // never load a chunk from inside movement; unknown ground is treated as a drop
+        }
+        int maxDrop = Math.max(1, Math.min(mob.getMaxFallDistance(), 32));
         for (int drop = 0; drop <= maxDrop + 1; drop++) {
             BlockPos pos = probe.below(drop);
             if (!level.getFluidState(pos).isEmpty()) {

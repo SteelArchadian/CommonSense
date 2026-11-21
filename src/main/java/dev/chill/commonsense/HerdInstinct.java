@@ -68,6 +68,10 @@ public final class HerdInstinct {
                 }
             }
         }
+        List<Mob> scared = new java.util.ArrayList<>();
+        if (!canFightBack(victim)) {
+            scared.add(victim);   // runs with its herd; a llama or bear that was hit fights back on its own (vanilla)
+        }
         int alerted = 0;
         for (Mob member : herd) {
             if (alerted++ >= MAX_ALERTED) {
@@ -77,8 +81,10 @@ public final class HerdInstinct {
                 fightBack(member, attacker);
             } else {
                 frighten(member, source, level);
+                scared.add(member);
             }
         }
+        HerdBehaviour.scare(scared, attacker);
     }
 
     /** Animals only: never monsters (hoglins count as monsters), never pets. */
